@@ -1,3 +1,10 @@
+<!--
+  ~ Copyright (c) 2007 Tridium, Inc.
+  ~ Copyright (c) 2019. Oliver Wieland (translation support)
+  ~ Licensed under the Academic Free License version 3.0
+  ~
+  -->
+
 <sedonaTranslate name="tutorial" vendor="Tridium" description="blah" main="xmlmain" target="cpp" outDir="..\src-gen">
     <cpp	hdrExt="h"
             srcExt="cpp"
@@ -9,4 +16,5 @@
     >
     </cpp>
     <kit name="sys"/>
+    <kit name="control"/>
 </sedonaTranslate>

@@ -32,14 +32,9 @@ public class TranslateTest {
         System.setProperty(SEDONA_HOME_PROP, sedonaHome);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSys() {
         Assert.assertEquals(0, Main.doMain(new String[]{KIT_XML_BASE_DIR + "/" + "sys" + TRANSLATE_SUFFIX, "-v"}));
-    }
-
-	@Test
-    public void testHelloWorld() {
-        Assert.assertEquals(0, 0);
     }
 
 }
