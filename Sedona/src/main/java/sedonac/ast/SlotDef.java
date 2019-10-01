@@ -50,14 +50,17 @@ public abstract class SlotDef
   public boolean isAction()    { return (flags & ACTION)    != 0; }
   public boolean isConst()     { return (flags & CONST)     != 0; }
   public boolean isDefine()    { return (flags & DEFINE)    != 0; }
+
   public boolean isInline()    { return (flags & INLINE)    != 0; }
   public boolean isInternal()  { return (flags & INTERNAL)  != 0; }
   public boolean isNative()    { return (flags & NATIVE)    != 0; }
   public boolean isOverride()  { return (flags & OVERRIDE)  != 0; }
+
   public boolean isPrivate()   { return (flags & PRIVATE)   != 0; }
   public boolean isProperty()  { return (flags & PROPERTY)  != 0; }
   public boolean isProtected() { return (flags & PROTECTED) != 0; }
   public boolean isPublic()    { return (flags & PUBLIC)    != 0; }
+
   public boolean isStatic()    { return (flags & STATIC)    != 0; }
   public boolean isVirtual()   { return (flags & VIRTUAL)   != 0; }
 
@@ -83,7 +86,8 @@ public abstract class SlotDef
   public final TypeDef parent;
   public final String name;
   public final String qname;
-  public final int flags;
+  // ow, 23.09.19: Removed 'final' modifier to change scope of fields (getter/setter)
+  public int flags;
   private int rtFlags;
   public boolean synthetic;
   public String doc;

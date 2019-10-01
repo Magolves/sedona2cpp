@@ -1,3 +1,3 @@
-<sedonaTranslate name="tutorial" vendor="Tridium" description="blah" main="xmlmain" target="c" outDir="..\src-gen">
+<sedonaTranslate name="tutorial" vendor="Tridium" description="blah" main="xmlmain" target="cpp" outDir="..\src-gen">
     <kit name="sys"/>
 </sedonaTranslate>

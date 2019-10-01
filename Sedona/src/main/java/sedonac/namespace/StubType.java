@@ -74,6 +74,11 @@ public class StubType
   public boolean isNumeric() { return false; }
   public boolean isWide()    { return false; }
 
+  @Override
+  public boolean isEnum() {
+    return false;
+  }
+
   public boolean isReflective() { return TypeUtil.isReflective(this); }
   public int id() { throw new UnsupportedOperationException(); }
 

@@ -12,10 +12,9 @@ package sedonac.translate;
 
 import java.io.*;
 import java.util.*;
-import sedonac.*;
+
 import sedonac.Compiler;
 import sedonac.ast.*;
-import sedonac.namespace.*;
 
 /**
  * HTranslator
@@ -49,7 +48,7 @@ public class HTranslator
     w("#define ").w(barrier).nl();
     w("").nl();
     w("#include \"sedona.h\"").nl();
-    includes();
+    includes(false, t -> true);
     w("").nl();
     structForward();
     w("").nl();
@@ -64,17 +63,6 @@ public class HTranslator
 // Includes
 //////////////////////////////////////////////////////////////////////////
 
-  public void findIncludes(HashMap acc, FieldDef f)
-  {
-    addInclude(acc, f.type);
-  }
-
-  public void findIncludes(HashMap acc, MethodDef m)
-  {
-    addInclude(acc, m.ret);
-    for (int i=0; i<m.params.length; ++i)
-      addInclude(acc, m.params[i].type);
-  }
 
 //////////////////////////////////////////////////////////////////////////
 // Forwards

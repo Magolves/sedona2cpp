@@ -44,6 +44,17 @@ public class IrMethod
   public boolean isInstanceInit() { return name.equals(INSTANCE_INIT); }
   public boolean isStaticInit() { return name.equals(STATIC_INIT); }
 
+  @Override
+  public boolean isInstanceDestroy() {
+    // not supported in Sedona (ow, 27.09.19)
+    return false;
+  }
+
+  @Override
+  public boolean isInitOrDestroy() {
+    return isInstanceInit() || isStaticInit();
+  }
+
 //////////////////////////////////////////////////////////////////////////
 // Fields
 //////////////////////////////////////////////////////////////////////////
