@@ -1,6 +1,7 @@
 package test.sedonac;
 
 import org.testng.Assert;
+import java.io.File;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import sedonac.Main;
@@ -17,7 +18,10 @@ public class TestCompile {
     @BeforeSuite
     public void checkSedonaHome() {
         String sedonaHome = System.getenv(SEDONA_HOME_ENV);
-        Assert.assertNotNull (sedonaHome);
+        Assert.assertNotNull (sedonaHome, "Environment variable " + SEDONA_HOME_ENV + " not set");
+
+        boolean sedonaHomeValid = new File(sedonaHome).exists();
+        Assert.assertTrue(sedonaHomeValid, SEDONA_HOME_ENV + " is set, but points to invalid location: " + sedonaHome);
         System.setProperty(SEDONA_HOME_PROP, sedonaHome);
     }
 
@@ -25,7 +29,7 @@ public class TestCompile {
     public void testSys() {
         Assert.assertEquals(0, Main.doMain(new String[]{KIT_XML_BASE_DIR + "/" + "sys" + TRANSLATE_SUFFIX, "-v"}));
     }
-	
+
 	@Test
     public void testHelloWorld() {
         Assert.assertEquals(0, 0);
