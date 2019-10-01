@@ -120,7 +120,7 @@ public class CppMakefileTranslator extends AbstractCppKitTranslator {
     public void header(String purpose) {
         w("##########################################################").nl();
         w("# " + purpose).nl();
-        w("# (C) Robert Bosch GmbH 2019").nl();
+        w("# " + COPY_RIGHT).nl();
         w("# Tag      : $Id$").nl();
         w("# Namespace: " + kit.name).nl();
         w("# Generated: " + new Date()).nl();

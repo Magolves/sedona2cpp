@@ -46,6 +46,7 @@ public class CppDefaults {
     public static final String DEFAULT_UNIT = UNITS_CLASS + CPP_NS_SEP + "none";
     public static final String CPP_SLOT_TYPE = SYS_KIT + CPP_NS_SEP + "Slot";
     public static final String CPP_SLOT_WRAPPER_TYPE = SYS_KIT + CPP_NS_SEP + "SlotHolder";
+    public static final String COPY_RIGHT = "(C) My Company 2019";
 
     //region Options
     private static CppOptions cppOptions;

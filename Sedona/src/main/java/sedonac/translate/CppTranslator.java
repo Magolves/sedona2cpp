@@ -60,9 +60,9 @@ public class CppTranslator extends CTranslator {
         beginNamespace();
         if (CppDefaults.getCppOptions().isGenerateMethodImpl()) {
             // Ctor
-            translateMethod(m -> m.isInstanceInit(), this::writeMethodImpl, false);
+            translateMethod(MethodDef::isInstanceInit, this::writeMethodImpl, false);
             // Dtor
-            translateMethod(m -> m.isInstanceDestroy(), this::writeMethodImpl, false);
+            translateMethod(MethodDef::isInstanceDestroy, this::writeMethodImpl, false);
             // Method impl
             translateMethod(m -> !m.isAbstract() && !m.isInitOrDestroy(), this::writeMethodImpl, false);
             // Properties
@@ -150,7 +150,7 @@ public class CppTranslator extends CTranslator {
     public void header(String purpose) {
         w("/*********************************************************").nl();
         w(" * " + purpose).nl();
-        w(" * (C) Robert Bosch GmbH 2019").nl();
+        w(" * " + COPY_RIGHT).nl();
         w(" * Tag      : $Id$").nl();
         w(" * Namespace: " + type.kit.name).nl();
         w(" * Class    : " + type.name).nl();
@@ -1090,7 +1090,7 @@ public class CppTranslator extends CTranslator {
      * Gets the type name with modifiers and array suffixes.
      * The modifiers are added according to the context.
      * <p>
-     * NITE: This method does NOT append pointer or reference modifiers
+     * NOTE: This method does NOT append pointer or reference modifiers
      *
      * @param type             the type
      * @param translateContext the translation context
@@ -1102,10 +1102,6 @@ public class CppTranslator extends CTranslator {
         final boolean isConst = translateContext.isConst();
         final boolean withNamespace = translateContext.isHeader() || CppDefaults.getCppOptions().requiresNamespaceInSource();
 
-        if (translateContext.isHeader() && translateContext.isStatic() && translateContext.isConst() && !translateContext.isMethod() && !type.isArray() && !type.isStr()) {
-            stringBuilder.append("constexpr ");
-        }
-
         // Modifiers
         if (!translateContext.isMethod()) {
             if (translateContext.isHeader() && translateContext.isStatic()) {
@@ -1113,7 +1109,8 @@ public class CppTranslator extends CTranslator {
             }
         }
 
-        if (isConst) {
+        // Add const for member variables
+        if (isConst && !translateContext.isMethod()) {
             stringBuilder.append("const ");
         }
 
@@ -1241,16 +1238,6 @@ public class CppTranslator extends CTranslator {
 
         private void setModifiers(int modifierMask) {
             modifiers = modifierMask;
-        }
-
-        /**
-         * Checks if given modifier is set
-         *
-         * @param modifier the modifier to test
-         * @return true, if given modifier is present
-         */
-        public boolean hasModifier(int modifier) {
-            return (modifier & modifiers) >0;
         }
 
         public boolean isSource() {

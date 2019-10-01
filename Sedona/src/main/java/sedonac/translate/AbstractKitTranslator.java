@@ -2,10 +2,8 @@ package sedonac.translate;
 
 import sedona.util.TextUtil;
 import sedonac.Compiler;
-import sedonac.CompilerStep;
 import sedonac.CompilerSupport;
 import sedonac.ast.KitDef;
-import sedonac.ast.TypeDef;
 import sedonac.namespace.Slot;
 import sedonac.namespace.StubType;
 import sedonac.namespace.Type;
@@ -17,6 +15,7 @@ import java.io.PrintWriter;
 import java.util.Date;
 
 import static sedonac.translate.AbstractTranslator.SPACES_PER_INDENT;
+import static sedonac.translate.CppDefaults.COPY_RIGHT;
 
 /**
  * Base class for all kit translators. This class is intended to generate files which
@@ -61,7 +60,7 @@ public abstract class AbstractKitTranslator extends CompilerSupport {
     public void header(String purpose) {
         w("/*********************************************************").nl();
         w(" * " + purpose).nl();
-        w(" * (C) Robert Bosch GmbH 2019").nl();
+        w(" * " + COPY_RIGHT).nl();
         w(" * Tag      : $Id$").nl();
         w(" * Namespace: " + kit.name).nl();
         w(" * Generated: " + new Date()).nl();

@@ -8,7 +8,7 @@ import sedonac.namespace.Type;
 import java.io.File;
 import java.util.*;
 
-import static sedonac.translate.TranslationUtil.isCppType;
+import static sedonac.translate.CppDefaults.COPY_RIGHT;
 
 public class PlantUmlTranslator extends AbstractCppKitTranslator {
     private List<Association>  associations = new ArrayList<Association>();
@@ -230,7 +230,7 @@ public class PlantUmlTranslator extends AbstractCppKitTranslator {
     @Override
     public void header(String purpose) {
         w("' " + purpose).nl();
-        w("' (C) Robert Bosch GmbH 2019").nl();
+        w("' " + COPY_RIGHT).nl();
         w("' Tag      : $Id$").nl();
         w("' Namespace: " + kit.name).nl();
         w("' Generated: " + new Date()).nl();
