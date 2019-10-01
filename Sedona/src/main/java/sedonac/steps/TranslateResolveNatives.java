@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2007 Tridium, Inc.
+ * Copyright (c) 2019. Oliver Wieland (translation support)
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
+
 package sedonac.steps;
 
 import sedona.Env;
