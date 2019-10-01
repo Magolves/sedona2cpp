@@ -8,28 +8,22 @@
 
 package sedonac.ast;
 
-import java.util.ArrayList;
-
-import sedona.Value;
-import sedona.Bool;
-import sedona.Int;
-import sedona.Long;
-import sedona.Float;
 import sedona.Double;
-import sedona.Str;
-import sedona.Buf;
+import sedona.Float;
+import sedona.Long;
+import sedona.*;
 import sedonac.Location;
-import sedonac.namespace.Method;
-import sedonac.namespace.Namespace;
 import sedonac.namespace.Slot;
-import sedonac.namespace.Field;
 import sedonac.namespace.Type;
-import sedonac.namespace.TypeUtil;
+import sedonac.namespace.*;
 import sedonac.parser.Token;
+
+import java.util.ArrayList;
 
 /**
  * Expr
  */
+
 public abstract class Expr
   extends AstNode
 {
@@ -110,6 +104,8 @@ public abstract class Expr
   public static final int DELETE         = 74;  // Delete
   public static final int PROP_ASSIGN    = 75;  // Property assignment :=
 
+  public static final int ENUM_LITERAL   = 100;
+
 
 //////////////////////////////////////////////////////////////////////////
 // Expr
@@ -186,6 +182,8 @@ public abstract class Expr
   
   public Integer toIntLiteral() { return null; }
 
+  public boolean isConst() { return isLiteral(); } // ow, 26.09.19
+
   protected abstract void doWalk(AstVisitor visitor);
 
   public void write(AstWriter out)
@@ -221,6 +219,7 @@ public abstract class Expr
 // Literal
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings({"UnnecessaryUnboxing", "UnnecessaryBoxing", "RedundantCast", "DuplicateBranchesInSwitch"})
   public static class Literal extends Expr
   {
     public Literal(Location loc, Namespace ns, int id, Object value)
@@ -242,6 +241,7 @@ public abstract class Expr
         case SLOT_LITERAL:       type = ns.slotType;   break;
         case NULL_LITERAL:       type = ns.objType;    break;
         case SIZE_OF:            type = ns.intType;    break;
+        case ENUM_LITERAL:       type = ns.intType;    break;
         default: throw new IllegalStateException();
       }
     }
@@ -251,6 +251,7 @@ public abstract class Expr
       super(loc, id);
       this.type  = type;
       this.id    = id;
+      // Enum: EnumObject
       this.value = value;
     }
 
@@ -267,21 +268,41 @@ public abstract class Expr
         case FLOAT_LITERAL:  return asFloat() == 0f;
         case DOUBLE_LITERAL: return asDouble() == 0d;
         case TIME_LITERAL:   return asLong() == 0L;
+        case ENUM_LITERAL:   return asInt() == 0;
         default:             return false;
       }
     }
     
     public Integer toIntLiteral() 
     { 
-      if (id == INT_LITERAL) return (Integer)value; 
+      if (id == INT_LITERAL) {
+        return (Integer)value;
+      } else if (id == ENUM_LITERAL) {
+        EnumObject enumObject = (EnumObject) value;
+        return (Integer)enumObject.ordinal;
+      }
       return null;
     }
 
-    public int asInt()        { return ((java.lang.Integer)value).intValue(); }
+    public int asInt()        {
+      if (id == INT_LITERAL) {
+        return ((java.lang.Integer) value).intValue();
+      } else if (id == ENUM_LITERAL) {
+        return ((EnumObject)value).ordinal;
+      } else {
+        throw new IllegalStateException("Cannot map literal "  + this + " to int");
+      }
+    }
     public long asLong()      { return ((java.lang.Long)value).longValue(); }
     public float asFloat()    { return ((java.lang.Float)value).floatValue(); }
     public double asDouble()  { return ((java.lang.Double)value).doubleValue(); }
-    public String asString()  { return (java.lang.String)value; }
+    public String asString()  {
+      if (id == ENUM_LITERAL) {
+        int ordinal = ((EnumObject)value).ordinal;
+        return ((EnumObject)value).tags[ordinal];
+      }
+      return (java.lang.String)value;
+    }
     public Buf asBuf()        { return (Buf)value; }
     public Type asType()      { return (Type)value; }
     public Slot asSlot()      { return (Slot)value; }
@@ -357,6 +378,7 @@ public abstract class Expr
 // Unary
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings("WeakerAccess")
   public static class Unary extends Expr
   {
     public Unary(Location loc, Token op, Expr operand) { this(loc, op, operand, false); }
@@ -372,6 +394,15 @@ public abstract class Expr
     public boolean isDecr()     { return id == PRE_DECR  || id == POST_DECR; }
     public boolean isPrefix()   { return id == PRE_INCR  || id == PRE_DECR; }
     public boolean isPostfix()  { return id == POST_INCR || id == POST_DECR; }
+
+    @Override
+    public boolean isConst() {
+      if (operand instanceof Expr.Field) {
+        // not const if lhs is this and op is either ++ or --
+        return ! (((Field)operand).target instanceof Expr.This && isIncrDecr());
+      }
+      return true; // ow, 26.09.19
+    }
 
     protected void doWalk(AstVisitor visitor)
     {
@@ -433,7 +464,24 @@ public abstract class Expr
 
     public String toString()
     {
-      return "(" + lhs + " " + op + " " + rhs + ")";
+      // ow, 21.09.19: Removed parenthesis
+      //return "(" + lhs + " " + op + " " + rhs + ")";
+      return lhs + " " + op + " " + rhs;
+    }
+
+    @Override
+    public boolean isConst() {
+      if (lhs instanceof Expr.Field) {
+        // Binary is not const if lhs target is this/local and op is 'assign'
+        // Local is not necessary the case, but cannot be evaluated in this context
+        // We are optimistic and let the compiler speak. A missing const is much harder to detect
+        // than a misplaced const.
+        boolean isAssignmentToThis = ((Field)lhs).target instanceof Expr.This && op.isAssign();
+
+        // boolean isAssignmentToLocal = ((Field)lhs).target instanceof Expr.Local && op.isAssign();
+        return !isAssignmentToThis;
+      }
+      return true; // ow, 26.09.19
     }
 
     public Token op;
@@ -445,6 +493,7 @@ public abstract class Expr
 // Cond
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings({"unchecked", "ForLoopReplaceableByForEach"})
   public static class Cond extends Expr
   {
     public Cond(Location loc, int id, Token op, Expr first)
@@ -475,15 +524,20 @@ public abstract class Expr
 
     public String toString()
     {
-      StringBuffer s = new StringBuffer();
+      StringBuilder s = new StringBuilder();
       s.append("(");
       for (int i=0; i<operands.size(); ++i)
       {
-        if (i > 0) s.append(" " + op + " ");
+        if (i > 0) s.append(" ").append(op).append(" ");
         s.append(operands.get(i));
       }
       s.append(")");
       return s.toString();
+    }
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.09.19
     }
 
     public Token op;
@@ -514,6 +568,11 @@ public abstract class Expr
     {
       return Math.max(cond.maxStack(), 
         Math.max(trueExpr.maxStack(), falseExpr.maxStack()));
+    }
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.10.19
     }
 
     public Expr cond;
@@ -566,6 +625,7 @@ public abstract class Expr
 // ParamVar
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings("UnnecessaryInterfaceModifier")
   public static interface NameDef
   {
     VarDef def();
@@ -587,6 +647,11 @@ public abstract class Expr
     public VarDef def() { return def; }
 
     public ParamDef def;
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26..09.19
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -609,6 +674,11 @@ public abstract class Expr
     public VarDef def() { return def; }
 
     public Stmt.LocalDef def;
+
+    @Override
+    public boolean isConst() {
+      return true;
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -625,6 +695,11 @@ public abstract class Expr
     public void doWalk(AstVisitor visitor) {}
     public int maxStack() { return 1; }
     public String toString() { return "this"; }
+
+    @Override
+    public boolean isConst() {
+      return true;
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -641,6 +716,11 @@ public abstract class Expr
     public void doWalk(AstVisitor visitor) {}
     public int maxStack() { return 1; }
     public String toString() { return "super"; }
+
+    @Override
+    public boolean isConst() {
+      return true;
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////
@@ -685,7 +765,12 @@ public abstract class Expr
       return null;
     }
 
-    public int maxStack() 
+    @Override
+    public boolean isConst() {
+      return true;
+    }
+
+    public int maxStack()
     {                            
       int base = super.maxStack();                
       int x = type.isWide() ? 2 : 1;
@@ -705,6 +790,7 @@ public abstract class Expr
 // Index
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings("RedundantIfStatement")
   public static class Index extends Expr
   {
     public Index(Location loc, Expr target, Expr index)
@@ -719,6 +805,11 @@ public abstract class Expr
       if (target.id == FIELD && ((Field)target).field.isConst())
         return false;
       return true; 
+    }
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.09.19
     }
 
     protected void doWalk(AstVisitor visitor)
@@ -745,6 +836,7 @@ public abstract class Expr
 // Call
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings("ConstantConditions")
   public static class Call extends Name
   {
     public Call(Location loc, Expr target, String name, Expr[] args)
@@ -777,8 +869,7 @@ public abstract class Expr
     public int maxStack() 
     {                 
       int stack = super.maxStack();
-      for (int i=0; i<args.length; ++i)
-        stack += args[i].maxStack();   
+      for (Expr arg : args) stack += arg.maxStack();
 
       if (id == Expr.PROP_SET) // if leave (which gets cleared in CodeAsm)
         stack += type.isWide() ? 2 : 1;
@@ -792,7 +883,7 @@ public abstract class Expr
 
     public String toString()
     {
-      StringBuffer s = new StringBuffer(super.toString());
+      StringBuilder s = new StringBuilder(super.toString());
       s.append("(");
       for (int i=0; i<args.length; ++i)
       {
@@ -817,6 +908,11 @@ public abstract class Expr
       super(loc, CAST);
       this.type   = type;
       this.target = target;
+    }
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.10.19
     }
 
     protected void doWalk(AstVisitor visitor)
@@ -908,6 +1004,11 @@ public abstract class Expr
       this.type = type;
     }
 
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.09.19
+    }
+
     protected void doWalk(AstVisitor visitor)
     {
       type = visitor.type(type);
@@ -925,14 +1026,20 @@ public abstract class Expr
 // Interpolation
 //////////////////////////////////////////////////////////////////////////
 
+  @SuppressWarnings("unchecked")
   public static class Interpolation extends Expr
   {
     public Interpolation(Location loc)
     {
       super(loc, INTERPOLATION);
       parts = new ArrayList();
-    }                
-    
+    }
+
+    @Override
+    public boolean isConst() {
+      return true; // ow, 26.10.19
+    }
+
     public Expr.Literal first()
     {                                                 
       Expr first = (Expr)parts.get(0);
@@ -944,9 +1051,8 @@ public abstract class Expr
     protected void doWalk(AstVisitor visitor)
     {                   
       ArrayList newParts = new ArrayList();
-      for (int i=0; i<parts.size(); ++i)
-      {
-        Expr expr = (Expr)parts.get(i);
+      for (Object part : parts) {
+        Expr expr = (Expr) part;
         newParts.add(expr.walk(visitor));
       }
       parts = newParts;
@@ -955,18 +1061,16 @@ public abstract class Expr
     public int maxStack() 
     {
       int stack = 0;
-      for (int i=0; i<parts.size(); ++i)
-        stack += ((Expr)parts.get(i)).maxStack();
+      for (Object part : parts) stack += ((Expr) part).maxStack();
       return stack;
     }
 
     public String toString()
     {             
-      StringBuffer s = new StringBuffer();
+      StringBuilder s = new StringBuilder();
       s.append('"');
-      for (int i=0; i<parts.size(); ++i)
-      {
-        Expr part = (Expr)parts.get(i);
+      for (Object o : parts) {
+        Expr part = (Expr) o;
         if (part.id == STR_LITERAL)
           s.append(part.toString());
         else
@@ -1043,6 +1147,28 @@ public abstract class Expr
     }
 
     public Expr target;
+  }
+
+//////////////////////////////////////////////////////////////////////////
+// Enum
+//////////////////////////////////////////////////////////////////////////
+  public static class EnumObject
+  {
+    public EnumObject(String name, int ordinal, String[] tags) {
+      this.name = name;
+      this.ordinal = ordinal;
+      this.tags = tags;
+    }
+
+    /**
+     * Name of the enum class/type
+     */
+    public String name;
+    /**
+     * The ordinal value
+     */
+    public int ordinal;
+    public String[] tags;
   }
 
 //////////////////////////////////////////////////////////////////////////

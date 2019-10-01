@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2007 Tridium, Inc.
+ * Copyright (c) 2019. Oliver Wieland (translation support)
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
+
 package test.sedonac;
 
 import org.testng.Assert;
@@ -6,7 +13,7 @@ import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import sedonac.Main;
 
-public class TestCompile {
+public class TranslateTest {
 
     private static final String SEDONA_HOME_ENV = "SEDONA_HOME";
     private static final String SEDONA_HOME_PROP = "sedona.home";
@@ -25,14 +32,9 @@ public class TestCompile {
         System.setProperty(SEDONA_HOME_PROP, sedonaHome);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testSys() {
         Assert.assertEquals(0, Main.doMain(new String[]{KIT_XML_BASE_DIR + "/" + "sys" + TRANSLATE_SUFFIX, "-v"}));
-    }
-
-	@Test
-    public void testHelloWorld() {
-        Assert.assertEquals(0, 0);
     }
 
 }

@@ -73,6 +73,11 @@ public class PrimitiveType
   public boolean isNumeric() { return isInteger() || isFloat() || isLong() || isDouble(); }
   public boolean isWide()    { return isLong() || isDouble(); }
 
+  @Override
+  public boolean isEnum() {
+    return false;
+  }
+
   public boolean isReflective() { return true; }
   public int id() { return id; }
 

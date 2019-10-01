@@ -488,10 +488,10 @@ public class ResolveExpr
 // Fields
 //////////////////////////////////////////////////////////////////////////
 
-  int numLocalsInScope = 0;
-  int maxLocals = 0;
+  protected int numLocalsInScope = 0;
+  protected int maxLocals = 0;
   Stack scopeStack = new Stack();
-  int foreachDepth;
-  HashMap labels;    // String -> Stmt
-  ArrayList gotos;   // Stmt.Goto
+  protected int foreachDepth;
+  protected HashMap labels;    // String -> Stmt
+  protected ArrayList gotos;   // Stmt.Goto
 }

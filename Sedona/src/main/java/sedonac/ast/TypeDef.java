@@ -9,6 +9,7 @@
 package sedonac.ast;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import sedonac.Location;
@@ -87,6 +88,11 @@ public class TypeDef
   public boolean isNumeric() { return false; }
   public boolean isWide()    { return false; }
 
+  @Override
+  public boolean isEnum() {
+    return false;
+  }
+
   public boolean isReflective() { return TypeUtil.isReflective(this); }
   public int id() { if (id < 0) throw new IllegalStateException(qname); return id; }
 
@@ -102,6 +108,20 @@ public class TypeDef
 
     slots.add(slot);
     slotsByName.put(name, slot);
+  }
+
+  public void removeSlot(Slot slot)
+  {
+    String name = slot.name();
+    if (!slotsByName.containsKey(name))
+      throw new IllegalStateException(slot.qname());
+
+    slots.remove(slot);
+    slotsByName.remove(name);
+  }
+
+  public void sort(Comparator<SlotDef> c) {
+    slots.sort(c);
   }
 
   public int flags() { return flags; }

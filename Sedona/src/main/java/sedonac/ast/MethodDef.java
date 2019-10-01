@@ -58,10 +58,20 @@ public class MethodDef
 
   public int numParams() { return TypeUtil.numParams(this); }
 
-  public boolean isInstanceInit() { return name.equals(INSTANCE_INIT); }
+  public boolean isInstanceInit() { return name.startsWith(INSTANCE_INIT); }
   public boolean isStaticInit() { return name.equals(STATIC_INIT); }
 
-//////////////////////////////////////////////////////////////////////////
+  @Override
+  public boolean isInstanceDestroy() {
+    return name.equals(INSTANCE_DESTROY);
+  }
+
+  @Override
+  public boolean isInitOrDestroy() {
+    return isInstanceInit() || isStaticInit() || isInstanceDestroy();
+  }
+
+  //////////////////////////////////////////////////////////////////////////
 // AstNode
 //////////////////////////////////////////////////////////////////////////
 

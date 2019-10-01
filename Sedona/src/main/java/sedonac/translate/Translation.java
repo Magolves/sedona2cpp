@@ -11,6 +11,8 @@
 package sedonac.translate;
 
 import java.io.*;
+import java.util.HashMap;
+
 import sedonac.ast.*;
 
 /**
@@ -23,5 +25,11 @@ public class Translation
   public String main;      // main method qualified name
   public File outDir;      // where to generate output
   public KitDef[] kits;    // list of kit AST trees
+  public int activeKitIndex;    // kit which is currently translated
 
+  public CppOptions cppOptions = new CppOptions();
+
+  public boolean isCpp() {
+    return "c++".equals(target) || "cpp".equals(target);
+  }
 }

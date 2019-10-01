@@ -73,6 +73,11 @@ public class UnresolvedType
   public boolean isNumeric() { return false; }
   public boolean isWide()    { return false; }
 
+  @Override
+  public boolean isEnum() {
+    return false;
+  }
+
   public boolean isReflective() { throw unresolved(); }
   public int id() { throw unresolved(); }
 

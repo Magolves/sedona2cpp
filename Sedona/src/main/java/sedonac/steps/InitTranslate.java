@@ -8,145 +8,179 @@
 
 package sedonac.steps;
 
-import java.io.*;
-import java.util.*;
-import java.util.zip.*;
 import sedona.Env;
-import sedona.xml.*;
-import sedonac.*;
+import sedona.kit.KitDb;
+import sedona.kit.KitFile;
+import sedona.util.Version;
+import sedona.xml.XElem;
+import sedona.xml.XException;
 import sedonac.Compiler;
-import sedonac.ast.*;
-import sedonac.parser.*;
-import sedonac.translate.*;
+import sedonac.CompilerStep;
+import sedonac.Location;
+import sedonac.ast.KitDef;
+import sedonac.translate.CppDefaults;
+import sedonac.translate.Translation;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static sedonac.translate.CppDefaults.*;
 
 /**
  * InitTranslate parses the XML file to get the meta-data and kit
- * list for translation into Java/C.  Then we parse all the source
- * files in each kit into a set of KitDef AST graphs.
+ * list for translation into Java/C.
  */
+@SuppressWarnings({"ToArrayCallWithZeroLengthArrayArgument", "unchecked", "WeakerAccess"})
 public class InitTranslate
-  extends CompilerStep
-{
+        extends CompilerStep {
 
 //////////////////////////////////////////////////////////////////////////
 // Run
 //////////////////////////////////////////////////////////////////////////
 
-  public InitTranslate(Compiler compiler)
-  {
-    super(compiler);
-    this.xmlFile = compiler.input;
-    this.xmlDir  = xmlFile.getParentFile();
-    this.xml     = compiler.xml;
-  }
+    public InitTranslate(Compiler compiler) {
+        super(compiler);
+        this.xmlFile = compiler.input;
+        this.xmlDir = xmlFile.getParentFile();
+        this.xml = compiler.xml;
+        compiler.doc = true;
+    }
 
-  public void run()
-  {
-    try
-    {
-      log.debug("  InitTranslate");
-      parseTranslation();
-      parseKits();
+    public void run() {
+        try {
+            log.debug("  InitTranslate");
+            parseTranslation();
+            parseKitsToTranslate();
+
+        } catch (XException e) {
+            throw err(e);
+        }
     }
-    catch (XException e)
-    {
-      throw err(e);
-    }
-  }
 
 //////////////////////////////////////////////////////////////////////////
 // XML
 //////////////////////////////////////////////////////////////////////////
 
-  private void parseTranslation()
-  {
-    Translation t = new Translation();
-    t.main   = xml.get("main");
-    t.target = xml.get("target");
-    t.outDir = new File(xmlDir, xml.get("outDir", t.target));
-    compiler.translation = t;
-  }
+    private void parseTranslation() {
+        Translation t = new Translation();
+        t.main = xml.get("main");
+        t.target = xml.get("target");
+        t.outDir = new File(xmlDir, xml.get("outDir", t.target));
+
+        XElem cppOptions = xml.elem("cpp");
+        if (cppOptions != null) {
+            t.cppOptions.setHeaderExt(cppOptions.get("hdrExt", DEFAULT_SOURCE_EXTENSION));
+            t.cppOptions.setSourceExt(cppOptions.get("srcExt", DEFAULT_HEADER_EXTENSION));
+            t.cppOptions.setObjectExt(cppOptions.get("objExt", DEFAULT_OBJECT_EXTENSION));
+            t.cppOptions.setUsingStd("true".equalsIgnoreCase(cppOptions.get("usingStd", "")));
+            t.cppOptions.setDisableErrorCheck("true".equalsIgnoreCase(cppOptions.get("disableErrorCheck", "")));
+            t.cppOptions.setMemberPrefix(cppOptions.get("memberPrefix", ""));
+            t.cppOptions.setMemberPostfix(cppOptions.get("memberPostfix", ""));
+            t.cppOptions.setGenerateMethodImpl("true".equalsIgnoreCase(cppOptions.get("generateMethodImpl", "")));
+            t.cppOptions.setGenerateTests("true".equalsIgnoreCase(cppOptions.get("generateTests", "")));
+
+            log.info("    " + t.cppOptions.toString());
+        } else {
+            log.info("No C++ options found, using defaults: " + t.cppOptions);
+        }
+        CppDefaults.setCppOptions(t.cppOptions);
+        compiler.translation = t;
+    }
 
 //////////////////////////////////////////////////////////////////////////
 // Parse Kits
 //////////////////////////////////////////////////////////////////////////
 
-  private void parseKits()
-  {
-    ArrayList kits = new ArrayList();
+    /**
+     * Collects all kits for translation -> compiler.translation.kits
+     */
+    private void parseKitsToTranslate() {
+        XElem[] elems = xml.elems("kit");
+        if (elems.length == 0)
+            throw err("Must specify at least one <kit> element", new Location(xml));
 
-    XElem[] elems = xml.elems("kit");
-    if (elems.length == 0)
-      throw err("Must specify at least one <kit> element", new Location(xml));
+        List<KitDef> kitDefs = new ArrayList<>();
+        for (XElem elem : elems) {
+            String name = elem.get("name");
+            try {
+                KitDef kitDef = verifyKitSource(name);
+                if (kitDef == null) {
+                    kitDef = verifyKitBinary(name);
+                }
 
-    for (int i=0; i<elems.length; ++i)
-    {
-      String name = elems[i].get("name");
-      try
-      {
-        kits.add(parseKit(name));
-      }
-      catch (IOException e)
-      {
-        throw err("Cannot parse kit: " + name, (Location)null, e);
-      }
+                log.info(String.format("    [%s] Source found in %s", name, kitDef.loc));
+                kitDefs.add(kitDef);
+
+            } catch (Exception e) {
+                throw err("Cannot parse kit: " + name, (Location) null, e);
+            }
+        }
+
+
+        // kit version is defined as follows
+        //   1) if command line -kitVersion
+        //   2) if defined by kit.xml
+        //   3) sedona.properties "buildVersion"
+        Version ver = compiler.kitVersion;
+
+        compiler.translation.kits = kitDefs.toArray(new KitDef[kitDefs.size()]);
     }
 
-    compiler.translation.kits = (KitDef[])kits.toArray(new KitDef[kits.size()]);
-  }
+    /**
+     * Checks the given directory for a valid kit.
+     *
+     * @param kitName the name of the kit.
+     * @return the kit def instance or null, if directory does not contain a (valid) kit
+     */
+    private KitDef verifyKitSource(String kitName) throws Exception {
+        File sedonaHome = Env.home;
+        final String sourcePathName = sedonaHome.getAbsolutePath() + File.separator + "src" + File.separator + kitName;
+        File sourceDirectory = new File(sourcePathName);
 
-  private KitDef parseKit(String kitName)
-    throws IOException
-  {
-    // find kit file
-    File file = new File(Env.home, "kits" +  File.separator + kitName + ".kit");
-    if (!file.exists() || file.isDirectory())
-      throw err("Cannot find kit '" + kitName + "'", new Location(file));
+        String[] sedonaFiles = sourceDirectory.list((dir, name) -> name.endsWith(".sedona"));
 
-    // init KitDef
-    KitDef kit = new KitDef(new Location(file));
-    kit.name = kitName;
-    compiler.ast = kit;
+        if (sedonaFiles == null || sedonaFiles.length == 0) {
+            err("No source files found in " + sourceDirectory);
+        }
 
-    // open kit file as a zip file and parse source files into AST TypeDefs
-    ArrayList types = new ArrayList();
-    ZipFile zip = new ZipFile(file);
-    try
-    {
-      Enumeration e = zip.entries();
-      while (e.hasMoreElements())
-      {
-        ZipEntry entry = (ZipEntry)e.nextElement();
-        String name = entry.getName();
-        if (name.startsWith("source/") && name.endsWith(".sedona"))
-          parse(file, zip, entry, types);
-      }
+        // init KitDef
+        KitDef kit = new KitDef(new Location(sourceDirectory));
+        kit.name = kitName;
+
+        return kit;
     }
-    finally
-    {
-      zip.close();
+
+    /**
+     * Checks for a binary kit
+     * @param kitName the name of the kit
+     * @throws IOException kit files could not be found or read
+     */
+    private KitDef verifyKitBinary(String kitName)
+            throws IOException {
+
+        KitFile kitFile = KitDb.matchBest(kitName);
+        if (kitFile == null) {
+            throw err("Cannot find kit '" + kitName + "'", new Location(kitName));
+        }
+
+        log.debug(String.format("   [%s -> %s]", kitName, kitFile));
+
+        // init KitDef
+        KitDef kit = new KitDef(new Location(kitFile.file));
+        kit.name = kitName;
+
+        return kit;
     }
-    compiler.ast.types = (TypeDef[])types.toArray(new TypeDef[types.size()]);
 
-    return kit;
-  }
-
-  private void parse(File file, ZipFile zip, ZipEntry entry, ArrayList types)
-    throws IOException
-  {
-    Location loc = new Location(file + "|" + entry.getName());
-    log.debug("    Parse [" + loc + "]");
-    InputStream in = zip.getInputStream(entry);
-    TypeDef[] t = new Parser(compiler, loc, in).parse();
-    for (int i=0; i<t.length; ++i) types.add(t[i]);
-  }
 
 //////////////////////////////////////////////////////////////////////////
 // Fields
 //////////////////////////////////////////////////////////////////////////
 
-  File xmlDir;
-  File xmlFile;
-  XElem xml;
+    File xmlDir;
+    File xmlFile;
+    XElem xml;
 
 }

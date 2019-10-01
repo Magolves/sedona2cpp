@@ -87,12 +87,12 @@ public abstract class OrderTypes
     if (ordered.size() != types.length)
       throw new IllegalStateException();
     ordered.toArray(types);
-
+/*
     if (log.isDebug())
     {
       for (int i=0; i<types.length; ++i)
         log.debug("    " + types[i]);
-    }
+    }*/
   }
 
 //////////////////////////////////////////////////////////////////////////

@@ -38,7 +38,7 @@ public class Main
     println("  -v           verbose logging");
     println("  -ver         print version info and exit");
     println("  -? -help     print this usage synopsis");
-    println("  -test        run test suite");
+    println("  -acceptField        run acceptField suite");
     println("  -layout      dump field layout (when compiling image)");
     println("  -kitVersion  force output kit to have specified version");
     println("  -noOptimize  skip const folding and optimization steps");
@@ -140,7 +140,7 @@ public class Main
       {
         compiler.dumpLayout = true;
       }
-      else if (arg.equals("-test"))
+      else if (arg.equals("-acceptField"))
       {
         String testName = null;
         if (i+1 < args.length) testName = args[i+1];

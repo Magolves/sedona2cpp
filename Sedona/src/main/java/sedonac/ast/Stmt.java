@@ -91,6 +91,11 @@ public abstract class Stmt
     }
 
     public Expr expr;
+
+    @Override
+    public String toString() {
+      return expr != null ? expr.toString() : "(null)";
+    }
   }
 
 //////////////////////////////////////////////////////////////////////////

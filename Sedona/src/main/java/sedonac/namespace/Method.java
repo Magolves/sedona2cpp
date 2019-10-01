@@ -42,7 +42,18 @@ public interface Method
    */
   public boolean isStaticInit();
 
+  /**
+   * Is the name INSTANCE_DESTROY (ow, 27.09.19)
+   */
+  public boolean isInstanceDestroy();
+
   public static final String INSTANCE_INIT = "_iInit";
   public static final String STATIC_INIT = "_sInit";
+  public static final String INSTANCE_DESTROY = "_iDestroy";
 
+  /**
+   * Method is init or destroy.
+   * @return true, if this method is either a (static) constructor or a destructor
+   */
+  public boolean isInitOrDestroy();
 }

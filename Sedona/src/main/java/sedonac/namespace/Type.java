@@ -126,7 +126,9 @@ public interface Type
   public boolean isVoid();
   public boolean isInteger(); // byte, short, int
   public boolean isNumeric(); // integer, float, long, double
-  public boolean isWide();    // long/double 
+  public boolean isWide();    // long/double
+
+  public boolean isEnum();
 
   public abstract boolean isReflective();
   public abstract int id(); // if reflective
