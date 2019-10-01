@@ -13,7 +13,7 @@ import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 import sedonac.Main;
 
-public class TestCompile {
+public class TranslateTest {
 
     private static final String SEDONA_HOME_ENV = "SEDONA_HOME";
     private static final String SEDONA_HOME_PROP = "sedona.home";
