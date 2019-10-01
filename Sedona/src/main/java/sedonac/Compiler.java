@@ -235,7 +235,6 @@ public class Compiler {
             new Normalize(this).run();
             if (t.isCpp()) {
                 new ResolveExprCpp(this).run();
-                //new StringifyType(this).run();
                 // Replace 'a.equals(b)' (where a and b are of type Str) with 'a == b'
                 new ReplaceStrEquals(this).run();
                 new CreateGettersAndSetters(this).run();
