@@ -32,13 +32,3 @@ sourceSets {
 test {
     useTestNG()
 }
-
-/* Copy our test classes to SEDONA_HOME */
-testClasses.doFirst {
-    ext.home = "$System.env.SEDONA_HOME"
-    println "Sedona home is " + ext.home
-    copy {
-        from fileTree('./src/test/sedona')
-        into ext.home
-    }
-}
