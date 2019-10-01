@@ -5,12 +5,12 @@
   ~
   -->
 
-<sedonaTranslate name="tutorial" vendor="Tridium" description="blah" main="xmlmain" target="cpp" outDir="..\src-gen">
+<sedonaTranslate name="tutorial" vendor="Tridium" description="blah" main="xmlmain" target="cpp" outDir="..\..\..\..\Cpp">
     <cpp	hdrExt="h"
             srcExt="cpp"
             objExt="o"
             usingStd="true"
-            generateMethodImpl="true"
+            generateMethodImpl="false"
             generateTests="true"
             disableErrorCheck="false"
     >

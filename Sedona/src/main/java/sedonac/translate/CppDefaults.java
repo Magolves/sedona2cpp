@@ -34,7 +34,8 @@ public class CppDefaults {
 
     public static final String CPP_NULL_LITERAL = "nullptr";
 
-    public static final String PROPERTY_CLASS = "Property";
+    public static final String SLOT_CLASS = "SlotWrapper";
+    public static final String TYPE_CLASS = "TypeWrapper";
 
     public static final String DEFAULT_HEADER_EXTENSION = "cc";
     public static final String DEFAULT_SOURCE_EXTENSION = "h";
@@ -52,7 +53,7 @@ public class CppDefaults {
     public static final String UNITS_CLASS = SYS_KIT + CPP_NS_SEP + "Units";
     public static final String DEFAULT_UNIT = UNITS_CLASS + CPP_NS_SEP + "none";
     public static final String CPP_SLOT_TYPE = SYS_KIT + CPP_NS_SEP + "Slot";
-    public static final String CPP_SLOT_WRAPPER_TYPE = SYS_KIT + CPP_NS_SEP + "SlotHolder";
+    public static final String CPP_SLOT_WRAPPER_TYPE = SYS_KIT + CPP_NS_SEP + SLOT_CLASS;
     public static final String COPY_RIGHT = "(C) My Company 2019";
 
     //region Options

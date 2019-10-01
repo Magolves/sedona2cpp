@@ -24,7 +24,7 @@ public class CppTranslator extends CTranslator {
 
     static final String[] STL_INCLUDES = new String[]{"vector", "iterator", "iostream", "fstream", "sstream", "stdint.h"};
     // List of additional internal includes
-    static final String[] HELPER_INCLUDES = new String[]{SYS_APPROX, PROPERTY_CLASS, "Units"};
+    static final String[] SOURCE_INCLUDES = new String[]{SYS_APPROX, SLOT_CLASS, TYPE_CLASS, "Units"};
     static final TranslateContext HEADER_CONTEXT = new TranslateContext(true);
     static final TranslateContext SOURCE_CONTEXT = new TranslateContext(false);
 
@@ -214,7 +214,7 @@ public class CppTranslator extends CTranslator {
         // Method modifiers
         if (translateContext.isHeader()) {
             // static and virtual are not allowed in source and cannot be combined
-            if (translateContext.isVirtual()) {
+            if (translateContext.isVirtual() && !translateContext.isOverride()) {
                 s.append("virtual ");
             } else if (translateContext.isStatic()) {
                 s.append("static ");
@@ -257,8 +257,8 @@ public class CppTranslator extends CTranslator {
             }
 
             final String type = toType(paramDef.type, translateContext);
-            // Pass virtuals and arrays as ref
-            if (paramDef.type.isaVirtual() || paramDef.type.isArray()) {
+            // Pass virtuals, arrays and strings as ref
+            if (paramDef.type.isaVirtual() || paramDef.type.isArray() || paramDef.type.isStr()) {
                 s.append(type);
                 s.append("&");
             } else {
@@ -274,7 +274,8 @@ public class CppTranslator extends CTranslator {
                 s.append(" override ");
             }
         }
-        if (methodDef.isConst() && !methodDef.isStatic()) {
+
+        if (methodDef.isConst() && !methodDef.isStatic() && !methodDef.isNative()) {
             s.append(" const");
         }
 
@@ -345,8 +346,19 @@ public class CppTranslator extends CTranslator {
 
     public void writeFieldDeclaration(FieldDef f, TranslateContext context) {
         String fieldType = toType(f.type, context);
+        boolean withInit;
+        boolean headerInitPossible = isHeaderInitPossible(f);
+        if (context.isHeader()) {
+            withInit = headerInitPossible;
+        } else {
+            withInit = !headerInitPossible;
+        }
 
         indent();
+        if (headerInitPossible && context.isHeader() && f.isStatic()) {
+            w("constexpr ");
+        }
+
         w(fieldType);
         if (fieldIsPointer(f)) {
             w("*");
@@ -359,14 +371,9 @@ public class CppTranslator extends CTranslator {
         }
         w(f.name);
 
-        boolean withInit;
-        boolean headerInitPossible = isHeaderInitPossible(f);
 
-        if (context.isHeader()) {
-            withInit = headerInitPossible;
-        } else {
-            withInit = !headerInitPossible;
-        }
+
+
 
         if (withInit) {
             w(" = ");
@@ -379,11 +386,29 @@ public class CppTranslator extends CTranslator {
         w(";").nl();
     }
 
+    /**
+     * Checks if field should be declared as pointer (instead of value)
+     * @param f the field to check
+     * @return true, if field should be declared as pointer
+     */
     protected boolean fieldIsPointer(FieldDef f) {
         boolean isNullInit = f.init != null && f.init.isNullLiteral(f.type);
-        return !f.isInline() && !f.type.isPrimitive() && !f.type.isArray() && !f.type.isStr() || isNullInit || isStdFileStream(f.type) || isLink(f.type);
+        return !(f.isInline() ||
+                f.type.isPrimitive() ||
+                f.type.isArray() ||
+                f.type.isStr())
+                ||
+                isNullInit ||
+                isStdFileStream(f.type) ||
+                isLink(f.type) ||
+                f.type.isAbstract();
     }
 
+    /**
+     * Checks if mmember can be initialized in the header file
+     * @param fieldDef the field to check
+     * @return
+     */
     protected boolean isHeaderInitPossible(FieldDef fieldDef) {
         if (fieldDef.isStatic()) {
             if (fieldDef.isDefine()) {

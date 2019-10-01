@@ -36,8 +36,8 @@ public class CppHTranslator extends CppTranslator {
         // Helper includes for components
         if (TypeUtil.isaComponent(type)) {
             // Internal includes
-            for (int i = 0; i < HELPER_INCLUDES.length; i++) {
-                String helperInclude = makeSysInclude(type, HELPER_INCLUDES[i]);
+            for (int i = 0; i < SOURCE_INCLUDES.length; i++) {
+                String helperInclude = makeSysInclude(type, SOURCE_INCLUDES[i]);
                 w(String.format("#include \"%s\"", helperInclude)).nl();
             }
         }

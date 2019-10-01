@@ -29,7 +29,7 @@ public class GTestHTranslator extends CppHTranslator {
         }
         w("").nl();
         // Internal includes
-        for (String include : HELPER_INCLUDES) {
+        for (String include : SOURCE_INCLUDES) {
             String helperInclude = makeSysInclude(type, include);
             w(String.format("#include \"%s\"", helperInclude)).nl();
         }
