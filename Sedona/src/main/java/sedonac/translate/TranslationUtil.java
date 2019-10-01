@@ -679,6 +679,8 @@ public class TranslationUtil {
      * @return true, if type has one or more virtual methods
      */
     public static boolean hasVirtualMethods(Type t) {
+        if (t == null) return false; // useful for t.base calls
+
         return slotExists(t, s -> s.isVirtual() || s.isAbstract());
     }
 

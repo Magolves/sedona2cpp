@@ -71,10 +71,17 @@ public class CheckMethodConst extends CompilerStep {
             storeConstResult(methodDef, EnumSet.of(NonConstViolation.initOrDestroy));
             return false;
         }
-        // Native methods (cannot affect this)
+
+        // Native methods (cannot affect 'this' pointer)
         if (methodDef.isNative()) {
             storeConstResult(methodDef, EnumSet.noneOf(NonConstViolation.class));
             return true;
+        }
+
+        // Obtain const'ness from overridden method
+        if (methodDef.isOverride() && methodDef.overrides instanceof MethodDef) {
+
+            return isConst((MethodDef) methodDef.overrides, parentVisitor);
         }
 
         // Check stack for dup call

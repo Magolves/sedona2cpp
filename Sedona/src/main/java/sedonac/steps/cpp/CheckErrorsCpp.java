@@ -80,7 +80,7 @@ public class CheckErrorsCpp
         Slot s = TranslationUtil.firstSlot(t, instanceDestroyPredicate());
         if (!s.isMethod()) { err("Dtor is not a method(?)"); }
         if (!s.isPublic()) { err("Dtor is not public"); }
-        if (s.isVirtual()) { err("Dtor must not be virtual"); }
+        if (!s.isVirtual()) { err("Dtor must be virtual"); }
         if (s.isAbstract()) { err("Dtor must not be abstract"); }
         if (s.isStatic()) { err("Dtor must not be static"); }
         if (s.isAction()) { err("Dtor must not be an action"); }

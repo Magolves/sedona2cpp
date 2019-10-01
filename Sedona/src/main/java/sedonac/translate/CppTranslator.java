@@ -269,14 +269,15 @@ public class CppTranslator extends CTranslator {
         }
         s.append(")");
 
+        if (methodDef.isConst() && !methodDef.isStatic() && !methodDef.isNative()) {
+            s.append(" const");
+        }
+
+        // Override must place AFTER const
         if (translateContext.isHeader()) {
             if (translateContext.isOverride()) {
                 s.append(" override ");
             }
-        }
-
-        if (methodDef.isConst() && !methodDef.isStatic() && !methodDef.isNative()) {
-            s.append(" const");
         }
 
         return s.toString();

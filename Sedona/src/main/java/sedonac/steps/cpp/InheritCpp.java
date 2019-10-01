@@ -14,6 +14,7 @@ import sedonac.ast.TypeDef;
 import sedonac.namespace.Slot;
 import sedonac.namespace.Type;
 import sedonac.namespace.TypeUtil;
+import sedonac.translate.TranslationUtil;
 
 /**
  * InheritCpp replaces Inherit for C++ translation. The problem of Inherit was that all slots of the base classes
@@ -96,6 +97,7 @@ public class InheritCpp extends CompilerStep {
         if (baseType != null) {
             if (slot.isOverride()) {
                 overriddenSlot = baseType.slot(slotName);
+                Slot newOverriddenSlot = overriddenSlot;
 
                 if (slot.isMethod()) {
                     // cannot change from action to non-action, or vice-versa
@@ -105,12 +107,25 @@ public class InheritCpp extends CompilerStep {
 
                     // cannot override a non-virtual method
                     if (!slotDef.isVirtual()) {
-                        overriddenSlot = slotDef;
+                        //newOverriddenSlot = slotDef;
                         warn("Override non-virtual method '" + overriddenSlot + "'", slotDef.loc);
                         slotDef.flags = slotDef.flags | Slot.VIRTUAL;
                     }
+
+                    if (overriddenSlot.isAbstract()) {
+                        log.debug(String.format("Override abstract method '%s.%s', drop OVERRIDE flag", baseType.qname(), overriddenSlot));
+                        slotDef.flags = slotDef.flags & ~Slot.OVERRIDE;
+                        //newOverriddenSlot = slotDef;
+                    }
+                    // If base type is C++ class, we cut the inheritance but declare method as virtual
+                    if (TranslationUtil.isCppType(baseType.qname())) {
+                        log.debug(String.format("Override method of internal C++ class '%s.%s', drop OVERRIDE/add VIRTUAL flag", baseType.qname(), overriddenSlot));
+                        newOverriddenSlot = null;
+                        slotDef.flags = (slotDef.flags | Slot.VIRTUAL)  & ~Slot.OVERRIDE;
+                        assert !slotDef.isOverride();
+                    }
                 }
-                slotDef.overrides = overriddenSlot;
+                slotDef.overrides = newOverriddenSlot;
             } else {
                 // Slot not marked as override -> shadows base slot
                 err("Must use 'override' keyword to override '" + qualifiedSlotName + "'", slotDef.loc);
