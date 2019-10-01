@@ -26,9 +26,11 @@ public class CppOptions {
     private boolean generateTests = false;
     /** If true, error check is disabled - USE WITH CARE! */
     private boolean disableErrorCheck = false;
+    /** Generate reflective types (Kit, Type, Slot) or not */
+    private boolean generateReflectiveTypes = false;
 
     /**
-     * Prefix for class members
+     * Prefix for class members (NOT SUPPORTED YET)
      */
     private String memberPrefix = "";
     private String memberPostfix = "_";
@@ -100,6 +102,14 @@ public class CppOptions {
         this.generateTests = generateTests;
     }
 
+    public boolean isGenerateReflectiveTypes() {
+        return generateReflectiveTypes;
+    }
+
+    public void setGenerateReflectiveTypes(boolean generateReflectiveTypes) {
+        this.generateReflectiveTypes = generateReflectiveTypes;
+    }
+
     public boolean isDisableErrorCheck() {
         return disableErrorCheck;
     }
@@ -115,11 +125,10 @@ public class CppOptions {
                 ", headerExt='" + headerExt + '\'' +
                 ", objectExt='" + objectExt + '\'' +
                 ", usingStd=" + usingStd +
+                ", generateMethodImpl=" + generateMethodImpl +
+                ", generateTests=" + generateTests +
+                ", generateReflectiveTypes=" + generateReflectiveTypes +
                 ", disableErrorCheck=" + disableErrorCheck +
-                ", impl=" + generateMethodImpl +
-                ", tests=" + generateTests +
-                ", prefix='" + memberPrefix + '\'' +
-                ", postfix='" + memberPostfix + '\'' +
                 '}';
     }
 }

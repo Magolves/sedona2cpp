@@ -20,6 +20,7 @@ import sedonac.Location;
 import sedonac.ast.KitDef;
 import sedonac.translate.CppDefaults;
 import sedonac.translate.Translation;
+import sedonac.translate.TranslationUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,7 +81,7 @@ public class InitTranslate
             t.cppOptions.setMemberPostfix(cppOptions.get("memberPostfix", ""));
             t.cppOptions.setGenerateMethodImpl("true".equalsIgnoreCase(cppOptions.get("generateMethodImpl", "")));
             t.cppOptions.setGenerateTests("true".equalsIgnoreCase(cppOptions.get("generateTests", "")));
-
+            t.cppOptions.setGenerateReflectiveTypes("true".equalsIgnoreCase(cppOptions.get("generateReflectiveTypes", "")));
             log.info("    " + t.cppOptions.toString());
         } else {
             log.info("No C++ options found, using defaults: " + t.cppOptions);

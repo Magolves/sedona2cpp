@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import static sedonac.ast.Expr.*;
-import static sedonac.namespace.TypeUtil.isaVirtual;
 import static sedonac.translate.CppDefaults.SYS_INCLUDE_PATH;
 
 @SuppressWarnings("unchecked")
@@ -27,7 +26,11 @@ public class TranslationUtil {
     public static final FacetDef[] NO_FACETS = {};
     public static final ParamDef[] NO_PARAMETERS = {};
 
-    public static final String SEDONA_SYS = "sys";
+    /* Reflective Sedona types (ignored, if option 'generateReflectiveTypes' is true */
+    public static final String[] REFLECTIVE_TYPES = {
+            CppDefaults.SYS_KIT + CppDefaults.CPP_NS_SEP + "Kit",
+            CppDefaults.SYS_KIT + CppDefaults.CPP_NS_SEP + "Slot",
+            CppDefaults.SYS_KIT + CppDefaults.CPP_NS_SEP + "Type"};
 
     private static final Stmt.LocalDef[] EMPTY_LOCAL_DEFS = new Stmt.LocalDef[0];
     public static final String SLOT_PREFIX = "Slot::";
@@ -117,9 +120,6 @@ public class TranslationUtil {
         sedonaToCppTypes.put("sys::MemoryFile", CppDefaults.STD_NS + "fstream");
         sedonaToCppTypes.put("sys::MemoryFileStore", CppDefaults.STD_NS + "fstream");
 
-        // This eases up compile, but should be removed later
-        sedonaToCppTypes.put("sys::Type", CppDefaults.getStringType());
-
         sedonaBaseClasses = new HashMap<>();
         sedonaBaseClasses.put("sys::Buf", CppDefaults.getStdVarArrayType() + "<uint8_t>");
 
@@ -149,6 +149,13 @@ public class TranslationUtil {
         return sedonaToCppTypes.containsKey(typeName);
     }
 
+    /**
+     * Adds the given type to the ignore list
+     * @param qTypeName the qualified type name, e. g. "sys::Obj"
+     */
+    public static void ignoredType(String qTypeName) {
+        sedonaToCppTypes.put(qTypeName, qTypeName);
+    }
 
     /**
      * Gets the C++ type for the given Sedona type

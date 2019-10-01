@@ -24,6 +24,7 @@ import sedonac.ast.KitDef;
 import sedonac.ast.NativeDef;
 import sedonac.namespace.Namespace;
 import sedonac.namespace.NativeId;
+import sedonac.translate.TranslationUtil;
 import sedonac.util.VarResolver;
 
 import java.io.File;
@@ -74,8 +75,19 @@ public class InitKitTranslate
             parseKitDef();
             findSourceFiles();
             validateNames();
+            setupReflectiveTypes();
         } catch (XException e) {
             throw err(e);
+        }
+    }
+
+    private void setupReflectiveTypes() {
+        if (!compiler.translation.cppOptions.isGenerateReflectiveTypes()) {
+            for (int i = 0; i < TranslationUtil.REFLECTIVE_TYPES.length; i++) {
+                String reflectiveType = TranslationUtil.REFLECTIVE_TYPES[i];
+                TranslationUtil.ignoredType(reflectiveType);
+                log.info("    Ignore type " + reflectiveType);
+            }
         }
     }
 

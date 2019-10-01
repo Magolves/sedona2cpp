@@ -12,6 +12,7 @@
             usingStd="true"
             generateMethodImpl="false"
             generateTests="true"
+            generateReflectiveTypes="false"
             disableErrorCheck="false"
     >
     </cpp>
