@@ -22,15 +22,25 @@ sourceSets {
 	  }
    }
 	
-   test {
-      java {
-         srcDir 'test'
-      }
+   main {
+	test {
+		java {
+			srcDir 'test'
+		}
+	  }
    }
 }
 
 test {
     useTestNG()
+	
+	testLogging {
+        showStandardStreams = true
+
+        // log results to "build/test-results" directory
+        exceptionFormat "full"
+        events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+    }
 }
 
 /* Copy our test classes to SEDONA_HOME */
