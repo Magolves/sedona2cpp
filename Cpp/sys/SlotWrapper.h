@@ -22,6 +22,10 @@ namespace sys {
 class Component;
 class Buf;
 
+typedef uint8_t SlotFlags;
+typedef uint32_t SlotId;
+
+
 
 // Template aliases (C++ 14)
 
