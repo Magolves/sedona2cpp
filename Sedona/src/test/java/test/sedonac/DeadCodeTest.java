@@ -9,6 +9,17 @@ package test.sedonac;
 
 import org.testng.annotations.Test;
 
+/**
+ * Note: All the conditions in these tests are meaningless except for the
+ * boolean literals. If we ever optimize expressions to determine values
+ * for boolean expressions (constant propagation) this test will need to
+ * be re-worked.
+ *
+ * @author Matthew Giannini, Oliver Wieland (migration to testNG)
+ * @created Nov 19, 2009
+ *
+ */
+
 public class DeadCodeTest extends CompileTest {
     private static final String[] neverExits = {"never exits"};
     private static final String[] line3col1 = {"3:1:"};
